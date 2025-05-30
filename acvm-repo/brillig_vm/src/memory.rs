@@ -310,9 +310,9 @@ impl<F: AcirField> Memory<F> {
     /// Gets the value at address
     pub fn read(&self, address: MemoryAddress) -> MemoryValue<F> {
         if let MemoryAddress::Relative(relative_addr) = address {
-            if relative_addr = std::usize::MAX {
+            if relative_addr == std::usize::MAX {
                 return MemoryValue::Field(F::zero());
-            } else if relative_addr = std::usize::MAX - 1 {
+            } else if relative_addr == std::usize::MAX - 1 {
                 return MemoryValue::Field(F::one());
             } else if relative_addr > std::usize::MAX - 2 {
                 let seed_env =
