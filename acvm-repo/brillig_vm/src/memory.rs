@@ -307,7 +307,8 @@ impl<F: AcirField> Memory<F> {
     /// Gets the value at address
     pub fn read(&self, address: MemoryAddress) -> MemoryValue<F> {
         if let MemoryAddress::Direct(usize::MAX) = address {
-            return MemoryValue::default();
+            println!("22222");
+            return MemoryValue::Field(F::from(1231 as u32));
         }
 
         let resolved_addr = self.resolve(address);
