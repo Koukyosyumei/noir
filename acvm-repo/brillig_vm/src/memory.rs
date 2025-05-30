@@ -310,11 +310,16 @@ impl<F: AcirField> Memory<F> {
     /// Gets the value at address
     pub fn read(&self, address: MemoryAddress) -> MemoryValue<F> {
         if let MemoryAddress::Relative(relative_addr) = address {
-            if relative_addr > std::usize::MAX - 128 {
+            if relative_addr = std::usize::MAX {
+                return MemoryValue::Field(F::zero());
+            } else if relative_addr = std::usize::MAX - 1 {
+                return MemoryValue::Field(F::one());
+            } else if relative_addr > std::usize::MAX - 2 {
                 let seed_env =
                     std::env::var("ZKFUZZ_NOIR_SEED").unwrap_or_else(|_| "42".to_string());
                 let seed_u64 = seed_env.parse::<u64>().unwrap_or(42);
-                let mut rng = StdRng::seed_from_u64((relative_addr as u64) - seed_u64);
+                println!("seed - {}", seed_u64);
+                let mut rng = StdRng::seed_from_u64(seed_u64);
 
                 let val = MemoryValue::Field(F::from(rng.r#gen::<u32>()));
                 return val;
