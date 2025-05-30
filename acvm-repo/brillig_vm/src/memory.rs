@@ -1,3 +1,6 @@
+use rand::Rng;
+use rand::{SeedableRng, rngs::StdRng};
+
 use acir::{
     AcirField,
     brillig::{BitSize, IntegerBitSize, MemoryAddress},
@@ -306,9 +309,16 @@ impl<F: AcirField> Memory<F> {
 
     /// Gets the value at address
     pub fn read(&self, address: MemoryAddress) -> MemoryValue<F> {
-        if let MemoryAddress::Relative(usize::MAX) = address {
-            println!("22222");
-            return MemoryValue::Field(F::from(1231 as u32));
+        if let MemoryAddress::Relative(relative_addr) = address {
+            if relative_addr > std::usize::MAX - 128 {
+                let seed_env =
+                    std::env::var("ZKFUZZ_NOIR_SEED").unwrap_or_else(|_| "42".to_string());
+                let seed_u64 = seed_env.parse::<u64>().unwrap_or(42);
+                let mut rng = StdRng::seed_from_u64((relative_addr as u64) - seed_u64);
+
+                let val = MemoryValue::Field(F::from(rng.r#gen::<u32>()));
+                return val;
+            }
         }
 
         let resolved_addr = self.resolve(address);
