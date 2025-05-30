@@ -849,6 +849,7 @@ dependencies = [
  "acvm_blackbox_solver",
  "num-bigint",
  "num-traits",
+ "rand 0.8.5",
  "thiserror 1.0.69",
 ]
 
