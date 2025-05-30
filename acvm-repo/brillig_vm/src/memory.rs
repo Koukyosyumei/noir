@@ -318,7 +318,6 @@ impl<F: AcirField> Memory<F> {
                 let seed_env =
                     std::env::var("ZKFUZZ_NOIR_SEED").unwrap_or_else(|_| "42".to_string());
                 let seed_u64 = seed_env.parse::<u64>().unwrap_or(42);
-                println!("seed - {}", seed_u64);
                 let mut rng = StdRng::seed_from_u64(seed_u64);
 
                 let val = MemoryValue::Field(F::from(rng.r#gen::<u32>()));
