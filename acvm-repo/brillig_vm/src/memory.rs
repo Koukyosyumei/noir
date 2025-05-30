@@ -309,24 +309,49 @@ impl<F: AcirField> Memory<F> {
 
     /// Gets the value at address
     pub fn read(&self, address: MemoryAddress) -> MemoryValue<F> {
+        let resolved_addr = self.resolve(address);
+        let original_value = self.inner.get(resolved_addr).copied().unwrap_or_default();
+
         if let MemoryAddress::Relative(relative_addr) = address {
             if relative_addr == std::usize::MAX {
-                return MemoryValue::Field(F::zero());
+                return match original_value {
+                    MemoryValue::Field(_) => MemoryValue::Field(F::zero()),
+                    MemoryValue::U1(_) => MemoryValue::U1(false),
+                    MemoryValue::U8(_) => MemoryValue::U8(0_u8),
+                    MemoryValue::U16(_) => MemoryValue::U16(0_u16),
+                    MemoryValue::U32(_) => MemoryValue::U32(0_u32),
+                    MemoryValue::U64(_) => MemoryValue::U64(0_u64),
+                    MemoryValue::U128(_) => MemoryValue::U128(0_u128),
+                };
             } else if relative_addr == std::usize::MAX - 1 {
-                return MemoryValue::Field(F::one());
+                return match original_value {
+                    MemoryValue::Field(_) => MemoryValue::Field(F::one()),
+                    MemoryValue::U1(_) => MemoryValue::U1(true),
+                    MemoryValue::U8(_) => MemoryValue::U8(1_u8),
+                    MemoryValue::U16(_) => MemoryValue::U16(1_u16),
+                    MemoryValue::U32(_) => MemoryValue::U32(1_u32),
+                    MemoryValue::U64(_) => MemoryValue::U64(1_u64),
+                    MemoryValue::U128(_) => MemoryValue::U128(1_u128),
+                };
             } else if relative_addr > std::usize::MAX - 2 {
                 let seed_env =
                     std::env::var("ZKFUZZ_NOIR_SEED").unwrap_or_else(|_| "42".to_string());
                 let seed_u64 = seed_env.parse::<u64>().unwrap_or(42);
                 let mut rng = StdRng::seed_from_u64(seed_u64);
 
-                let val = MemoryValue::Field(F::from(rng.r#gen::<u32>()));
-                return val;
+                return match original_value {
+                    MemoryValue::Field(_) => MemoryValue::Field(F::from(rng.r#gen::<u32>())),
+                    MemoryValue::U1(_) => MemoryValue::U1(rng.r#gen::<bool>()),
+                    MemoryValue::U8(_) => MemoryValue::U8(rng.r#gen::<u8>()),
+                    MemoryValue::U16(_) => MemoryValue::U16(rng.r#gen::<u16>()),
+                    MemoryValue::U32(_) => MemoryValue::U32(rng.r#gen::<u32>()),
+                    MemoryValue::U64(_) => MemoryValue::U64(rng.r#gen::<u64>()),
+                    MemoryValue::U128(_) => MemoryValue::U128(rng.r#gen::<u128>()),
+                };
             }
         }
 
-        let resolved_addr = self.resolve(address);
-        self.inner.get(resolved_addr).copied().unwrap_or_default()
+        original_value
     }
 
     pub fn read_ref(&self, ptr: MemoryAddress) -> MemoryAddress {
