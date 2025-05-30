@@ -309,11 +309,32 @@ impl<F: AcirField> Memory<F> {
 
     /// Gets the value at address
     pub fn read(&self, address: MemoryAddress) -> MemoryValue<F> {
-        if let MemoryAddress::Relative(relative_addr) = address {
-            if relative_addr == std::usize::MAX {
-                return MemoryValue::U32(0_u32);
-                /*
-                return match original_value {
+        let (is_mutation_target, resolved_addr) = match address {
+            MemoryAddress::Direct(d_address) => {
+                if d_address > std::usize::MAX / 2 {
+                    (true, std::usize::MAX - d_address)
+                } else {
+                    (false, self.resolve(address))
+                }
+            }
+            MemoryAddress::Relative(offset) => {
+                if offset > std::usize::MAX / 2 {
+                    (true, self.get_stack_pointer() + (std::usize::MAX - offset))
+                } else {
+                    (false, self.resolve(address))
+                }
+            }
+        };
+
+        if is_mutation_target {
+            let original_value = self.inner.get(resolved_addr).copied().unwrap_or_default();
+
+            let seed_env = std::env::var("ZKFUZZ_NOIR_SEED").unwrap_or_else(|_| "42".to_string());
+            let seed_u64 = seed_env.parse::<u64>().unwrap_or(42);
+            let mut rng = StdRng::seed_from_u64(seed_u64);
+
+            return if rng.r#gen::<f64>() < 0.3 {
+                match original_value {
                     MemoryValue::Field(_) => MemoryValue::Field(F::zero()),
                     MemoryValue::U1(_) => MemoryValue::U1(false),
                     MemoryValue::U8(_) => MemoryValue::U8(0_u8),
@@ -321,11 +342,9 @@ impl<F: AcirField> Memory<F> {
                     MemoryValue::U32(_) => MemoryValue::U32(0_u32),
                     MemoryValue::U64(_) => MemoryValue::U64(0_u64),
                     MemoryValue::U128(_) => MemoryValue::U128(0_u128),
-                };*/
-            } else if relative_addr == std::usize::MAX - 1 {
-                return MemoryValue::U32(1_u32);
-                /*
-                return match original_value {
+                }
+            } else if rng.r#gen::<f64>() < 0.6 {
+                match original_value {
                     MemoryValue::Field(_) => MemoryValue::Field(F::one()),
                     MemoryValue::U1(_) => MemoryValue::U1(true),
                     MemoryValue::U8(_) => MemoryValue::U8(1_u8),
@@ -333,16 +352,9 @@ impl<F: AcirField> Memory<F> {
                     MemoryValue::U32(_) => MemoryValue::U32(1_u32),
                     MemoryValue::U64(_) => MemoryValue::U64(1_u64),
                     MemoryValue::U128(_) => MemoryValue::U128(1_u128),
-                };
-                */
-            } else if relative_addr > std::usize::MAX - 2 {
-                let seed_env =
-                    std::env::var("ZKFUZZ_NOIR_SEED").unwrap_or_else(|_| "42".to_string());
-                let seed_u64 = seed_env.parse::<u64>().unwrap_or(42);
-                let mut rng = StdRng::seed_from_u64(seed_u64);
-                return MemoryValue::U32(rng.r#gen::<u32>());
-                /*
-                return match original_value {
+                }
+            } else {
+                match original_value {
                     MemoryValue::Field(_) => MemoryValue::Field(F::from(rng.r#gen::<u32>())),
                     MemoryValue::U1(_) => MemoryValue::U1(rng.r#gen::<bool>()),
                     MemoryValue::U8(_) => MemoryValue::U8(rng.r#gen::<u8>()),
@@ -350,11 +362,10 @@ impl<F: AcirField> Memory<F> {
                     MemoryValue::U32(_) => MemoryValue::U32(rng.r#gen::<u32>()),
                     MemoryValue::U64(_) => MemoryValue::U64(rng.r#gen::<u64>()),
                     MemoryValue::U128(_) => MemoryValue::U128(rng.r#gen::<u128>()),
-                };*/
-            }
+                }
+            };
         }
 
-        let resolved_addr = self.resolve(address);
         self.inner.get(resolved_addr).copied().unwrap_or_default()
     }
 
