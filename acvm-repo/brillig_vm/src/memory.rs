@@ -62,7 +62,7 @@ impl<F> MemoryValue<F> {
     pub fn to_usize(&self) -> usize {
         match self {
             MemoryValue::U32(value) => (*value).try_into().unwrap(),
-            _ => 0, //panic!("value is not typed as brillig usize"),
+            _ => panic!("value is not typed as brillig usize"),
         }
     }
 }
