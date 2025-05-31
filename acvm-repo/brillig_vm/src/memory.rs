@@ -397,7 +397,7 @@ impl<F: AcirField> Memory<F> {
 
         let max_memory_size_env =
             std::env::var("ZKFUZZ_NOIR_MAX_MEMORY_SIZE").unwrap_or_else(|_| "1000000".to_string());
-        let max_memory_size_usize = seed_env.parse::<usize>().unwrap_or(1000000);
+        let max_memory_size_usize = max_memory_size_env.parse::<usize>().unwrap_or(1000000);
 
         if new_size > max_memory_size_usize {
             panic!("too large memory allocation of {} bytes", new_size);
