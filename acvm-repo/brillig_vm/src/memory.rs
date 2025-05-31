@@ -394,6 +394,11 @@ impl<F: AcirField> Memory<F> {
     fn resize_to_fit(&mut self, size: usize) {
         // Calculate new memory size
         let new_size = std::cmp::max(self.inner.len(), size);
+
+        if new_size > 1000000 {
+            panic!("too large memory allocation of {} bytes", new_size);
+        }
+
         // Expand memory to new size with default values if needed
         self.inner.resize(new_size, MemoryValue::default());
     }
